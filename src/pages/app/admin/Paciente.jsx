@@ -14,12 +14,14 @@ import ResumoPaciente from './ResumoPaciente'
 import FichaEObjetivos from './FichaEObjetivos'
 import AnotacoesClinicas from './AnotacoesClinicas'
 import Protocolos from './Protocolos'
+import Graficos from './Graficos'
 import { Pensamentos, Reflexoes } from './AbasRegistros'
 
-const PERIODOS = [7, 14, 30]
+const PERIODOS = [7, 14, 30, 60]
 
 const ABAS = [
   { id: 'resumo', rotulo: 'Resumo', usaPeriodo: true },
+  { id: 'graficos', rotulo: 'Gráficos', usaPeriodo: true },
   { id: 'linha', rotulo: 'Linha do tempo', usaPeriodo: true },
   { id: 'protocolos', rotulo: 'Protocolos e hábitos', usaPeriodo: true },
   { id: 'reflexoes', rotulo: 'Semana' },
@@ -243,6 +245,14 @@ export default function Paciente() {
           <ResumoPaciente userId={id} sintese={sintese} periodo={periodo} desde={dias[0]} />
         ) : aba === 'linha' ? (
           <LinhaDoTempo dias={dias} checkins={sintese.checkinsDoPeriodo} />
+        ) : aba === 'graficos' ? (
+          <Graficos
+            perfil={perfil}
+            dias={dias}
+            checkins={sintese.checkinsDoPeriodo}
+            crises={sintese.modulos.crisesDoPeriodo}
+            escalas={sintese.modulos.escalas}
+          />
         ) : aba === 'protocolos' ? (
           <Protocolos
             perfil={perfil}

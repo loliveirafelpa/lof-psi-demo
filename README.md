@@ -44,11 +44,17 @@ Não precisa de `.env`. Em `/entrar`, escolha um perfil: a psicóloga ou um dos 
 
 **Psicóloga**:
 - Lista de pacientes e Novo paciente, já com a escolha dos módulos.
-- Página do paciente com as abas Resumo, Linha do tempo, **Protocolos e hábitos**, Semana, Pensamentos, Ficha e objetivos e Anotações clínicas.
+- Página do paciente com as abas Resumo, **Gráficos**, Linha do tempo, **Protocolos e hábitos**, Semana, Pensamentos, Ficha e objetivos e Anotações clínicas.
 - O Resumo inclui:
   - o bloco "Para conferir com atenção";
   - o último resultado de cada questionário;
   - as frases e os temas de cada módulo, junto com os do check-in básico.
+- A aba Gráficos (períodos de 7, 14, 30 e 60 dias) tem quatro seções:
+  - evolução de humor, ansiedade, sono e energia, com média móvel de 7 dias;
+  - padrões: mapa do humor, humor por dia da semana e emoções mais marcadas;
+  - o que aparece junto: ansiedade por situação, humor conforme o sono e energia com e sem movimento, sempre com o número de dias de cada grupo;
+  - protocolos e hábitos: uma série por módulo ligado, crises e o histórico de cada questionário com o ponto de corte.
+- Os gráficos são SVG próprios (`src/components/Graficos.jsx`), sem biblioteca. Os cálculos ficam em `src/lib/analises.js` e as cores em `theme.js`, validadas para daltonismo.
 
 ## Para virar produto com banco
 Para conectar o Supabase:

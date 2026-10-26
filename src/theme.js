@@ -18,6 +18,17 @@ export const cores = {
   alertaFundo: '#FBECE8',
   atencao: '#8A5A10', // destaques para a psicóloga conferir (não é diagnóstico)
   atencaoFundo: '#FBF1E1',
+  // Gráficos — validados com o validador de paleta (daltonismo e contraste sobre o branco).
+  serie1: '#00908A', // série principal
+  serie2: '#E0703F', // segunda série, só em comparações de dois grupos
+  serieSuave: '#A9D3CF', // pontos diários atrás da média móvel (ênfase menor)
+  grade: '#E6EEED', // linhas de grade e eixos, recessivos
+  // Escala ordinal do mapa de calor (claro → escuro, um só tom).
+  escala1: '#7FC4B0',
+  escala2: '#56AB96',
+  escala3: '#38917F',
+  escala4: '#22766C',
+  escala5: '#0F5E63',
 }
 
 export const fontes = {

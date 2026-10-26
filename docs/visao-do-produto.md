@@ -13,14 +13,16 @@ Uma demonstração navegável do aplicativo de acompanhamento entre sessões que
    - a síntese descritiva;
    - a escala de Edimburgo;
    - os temas para a sessão.
-4. Abrir o **Rafael** na aba **Protocolos e hábitos**: os interruptores dos módulos, a evolução do GAD-7 e as crises registradas.
-5. **Trocar perfil** e entrar como a **Juliana** (tabagismo). Fazer o check-in de hoje e mostrar os "dias sem fumar".
-6. Entrar como o **Rafael** e abrir **"Ansiedade forte agora?"** para mostrar a respiração guiada.
-7. Entrar como a **Ana** para mostrar o primeiro acesso com consentimento (LGPD).
-8. **Restaurar dados** ao final, se quiser começar de novo.
+4. Abrir o **Rafael** na aba **Gráficos**, com o período de 30 dias: a evolução do humor e da ansiedade, o mapa do humor e o que aparece junto (ansiedade por situação, energia com e sem movimento).
+5. Ainda no Rafael, aba **Protocolos e hábitos**: os interruptores dos módulos, a evolução do GAD-7 e as crises registradas.
+6. **Trocar perfil** e entrar como a **Juliana** (tabagismo). Fazer o check-in de hoje e mostrar os "dias sem fumar".
+7. Entrar como o **Rafael** e abrir **"Ansiedade forte agora?"** para mostrar a respiração guiada.
+8. Entrar como a **Ana** para mostrar o primeiro acesso com consentimento (LGPD).
+9. **Restaurar dados** ao final, se quiser começar de novo.
 
 ## O que a psicóloga ganha
 - Resumo de cada paciente antes da sessão, com temas sugeridos e espaço para as próprias anotações.
+- Aba de gráficos com a evolução, os padrões da semana e o que costuma aparecer junto nos registros. A linguagem é sempre descritiva, nunca de causa.
 - **Módulos que ela liga por paciente:**
   - hábitos: tabagismo e álcool;
   - protocolos: puerpério, crise de ansiedade, bullying, luto, esgotamento no trabalho e insônia.
