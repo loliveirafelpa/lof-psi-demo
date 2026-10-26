@@ -56,6 +56,16 @@ Não precisa de `.env`. Em `/entrar`, escolha um perfil: a psicóloga ou um dos 
   - protocolos e hábitos: uma série por módulo ligado, crises e o histórico de cada questionário com o ponto de corte.
 - Os gráficos são SVG próprios (`src/components/Graficos.jsx`), sem biblioteca. Os cálculos ficam em `src/lib/analises.js` e as cores em `theme.js`, validadas para daltonismo.
 
+## Situação e próximos passos (26/10/2026)
+- Pronto e com commit: a demo completa, com módulos, protocolos, questionários e a aba Gráficos.
+- Falta publicar:
+  1. Criar no GitHub o repositório vazio e privado `lof-psi-demo`.
+  2. Enviar o código: `git remote add origin https://github.com/loliveirafelpa/lof-psi-demo.git` e depois `git push -u origin main`.
+  3. Importar o repositório na Vercel.
+- Depois da validação:
+  - revisar com a Bruna as perguntas de `docs/protocolos.md`;
+  - levar ao app dela os módulos e a aba Gráficos (migrations, RLS e testes).
+
 ## Para virar produto com banco
 Para conectar o Supabase:
 1. Reescrever o corpo das funções `xxxApi.js`.

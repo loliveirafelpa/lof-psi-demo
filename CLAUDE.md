@@ -19,6 +19,12 @@ Para decisões maiores, consultar o `playbook-tecnico.md` nesta pasta.
 
 ## Convenções
 - Módulos e protocolos são declarados em `src/data/modulos.js`, questionários em `src/data/escalas.js` e as frases do resumo em `src/lib/sinteseModulos.js`.
+- Gráficos da psicóloga:
+  - componentes SVG próprios em `src/components/Graficos.jsx`, sem biblioteca;
+  - cálculos em `src/lib/analises.js`;
+  - a série de cada módulo em `SERIES_MODULOS`;
+  - cores `serie1`, `serie2`, `serieSuave`, `grade` e `escala1–5` em `theme.js`, validadas para daltonismo (revalidar se mudar);
+  - regras: um eixo por gráfico, comparações sempre com o número de dias de cada grupo, e nunca afirmar causa.
 - Telas do paciente usam `Pagina` e `Bloco`. Telas de acesso usam `LayoutAcesso`.
 - Ambiente local: `npm run dev -- --port 5190`.
 - Commits em português, verbo no imperativo, descrevendo o efeito para quem usa. Sem `feat:`/`fix:`.
