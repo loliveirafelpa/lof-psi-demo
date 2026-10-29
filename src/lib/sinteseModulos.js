@@ -309,17 +309,39 @@ export function gerarSinteseModulos({ perfil, checkins, crises = [], escalas = [
 
   // Pontos para conferir com atenção (sempre descritivos, nunca diagnóstico).
   for (const e of escalas.filter((x) => periodo.has(x.data))) {
-    const escala = ESCALAS[e.tipo]
-    if (escala.itemRisco !== undefined && e.respostas[escala.itemRisco] > 0) {
+    if (itemRiscoMarcado(e)) {
+      const escala = ESCALAS[e.tipo]
       const opcao = escala.itens[escala.itemRisco].opcoes.find((o) => o.pontos === e.respostas[escala.itemRisco])
       alertas.push(`${escala.nome} de ${diaCurto(e.data)}: o item sobre pensar em se machucar foi respondido com “${opcao.rotulo.toLowerCase()}”.`)
     }
   }
   for (const c of checkins) {
-    const ameaca = (c.modulos?.bullying?.aconteceu ?? []).filter((v) => v === 'ameaca' || v === 'fisico')
+    const ameaca = ameacaNaEscola(c)
     if (ameaca.length) alertas.push(`${diaCurto(c.data)}: marcou “${ameaca.map((v) => rotulo('bullying', 'aconteceu', v)).join('” e “')}” na escola.`)
-    if (c.modulos?.puerperio?.intrusivos === 2) alertas.push(`${diaCurto(c.data)}: pensamentos assustadores “muitas vezes”.`)
+    if (intrusivosFrequentes(c)) alertas.push(`${diaCurto(c.data)}: pensamentos assustadores “muitas vezes”.`)
   }
 
   return { frases, temas, alertas, escalas: resumirEscalas(escalas), crisesDoPeriodo: crisesPeriodo }
+}
+
+// Regras dos pontos de atenção, usadas no Resumo ("Para conferir com atenção") e na lista de pacientes.
+const itemRiscoMarcado = (e) => {
+  const escala = ESCALAS[e.tipo]
+  return escala?.itemRisco !== undefined && e.respostas[escala.itemRisco] > 0
+}
+const ameacaNaEscola = (c) => (c.modulos?.bullying?.aconteceu ?? []).filter((v) => v === 'ameaca' || v === 'fisico')
+const intrusivosFrequentes = (c) => c.modulos?.puerperio?.intrusivos === 2
+
+// A partir de quantas crises na semana o paciente aparece em "Precisam de atenção".
+export const CRISES_PARA_ATENCAO = 2
+
+// Sinais clínicos de um paciente nos registros recebidos (a lista usa os últimos 7 dias).
+// Etiquetas curtas e descritivas, para a lista de pacientes.
+export function sinaisClinicos({ checkins = [], crises = [], escalas = [] }) {
+  const sinais = []
+  if (escalas.some(itemRiscoMarcado)) sinais.push('EPDS: item de risco marcado')
+  if (crises.length >= CRISES_PARA_ATENCAO) sinais.push(`${crises.length} crises na semana`)
+  if (checkins.some((c) => intrusivosFrequentes(c))) sinais.push('Pensamentos assustadores “muitas vezes”')
+  if (checkins.some((c) => ameacaNaEscola(c).length)) sinais.push('Ameaça ou agressão na escola')
+  return sinais
 }

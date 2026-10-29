@@ -26,6 +26,9 @@ Para decisões maiores, consultar o `playbook-tecnico.md` nesta pasta.
   - cores `serie1`, `serie2`, `serieSuave`, `grade` e `escala1–5` em `theme.js`, validadas para daltonismo (revalidar se mudar);
   - regras: um eixo por gráfico, comparações sempre com o número de dias de cada grupo, e nunca afirmar causa.
 - Telas do paciente usam `Pagina` e `Bloco`. Telas de acesso usam `LayoutAcesso`.
-- Ambiente local: `npm run dev -- --port 5190`.
+- Painel da psicóloga, por paciente: abas Resumo, Gráficos, Detalhamento (tudo na íntegra), Protocolos (só configuração), Objetivo da semana, Registro de pensamentos e Anotações clínicas (onde todas as anotações se juntam, com a origem).
+- Padrão visual: nenhum texto abaixo de 12 px (`text-xs`); títulos de bloco `text-xl sm:text-2xl`; cartões `rounded-2xl p-5 sm:p-6`; ações pequenas sempre com `BotaoAcao`. Conferir toda mudança de tela no computador (1280) e no celular (390), sem rolagem lateral.
+- Questionários são opcionais dentro do módulo (`perfil.escalas`), com frequência escolhida pela psicóloga. O objetivo da semana é escrito só pela psicóloga.
+- Ambiente local: `npm run dev -- --port 5190` (se estiver ocupada, outra porta). Depois de mudar `semente.js`, "Restaurar dados" na demo.
 - Commits em português, verbo no imperativo, descrevendo o efeito para quem usa. Sem `feat:`/`fix:`.
 - Ao validar uma novidade aqui, levá-la ao app da Bruna com migration, RLS e testes (ver o CLAUDE.md de lá).

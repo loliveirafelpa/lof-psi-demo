@@ -1,4 +1,5 @@
-// Reflexão semanal do paciente.
+// Reflexão semanal do paciente (avanço percebido, avanços e dificuldades). O objetivo da semana
+// não fica aqui: é escrito só pela psicóloga (objetivosApi.js, "objetivos_semana").
 // DEMONSTRAÇÃO: banco do navegador. Com Supabase: tabela `reflexoes_semanais`, RLS do paciente + leitura pela Admin.
 import { ler, gravar, novoId, agora, esperar } from './demo/banco'
 import { paraIso } from './datas'
@@ -30,7 +31,6 @@ export async function salvarReflexao(r) {
   const linha = {
     userId: r.userId,
     semanaInicio: r.semanaInicio,
-    objetivo: r.objetivo?.trim() || null,
     percepcaoAvanco: r.percepcaoAvanco,
     avancos: r.avancos?.trim() || null,
     dificuldades: r.dificuldades?.trim() || null,

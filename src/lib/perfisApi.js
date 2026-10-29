@@ -9,7 +9,7 @@ const doBanco = (p) => ({
   nome: p.nome,
   email: p.email,
   modulos: p.modulos ?? {},
-  registroPensamentosAtivo: p.registroPensamentosAtivo,
+  escalas: p.escalas ?? {},
   acompanhamentoEncerradoEm: p.acompanhamentoEncerradoEm,
   createdAt: p.createdAt,
 })
@@ -48,17 +48,25 @@ export async function buscarPerfil(id) {
   return buscar(id)
 }
 
-export async function definirRegistroPensamentos(id, ativo) {
-  await esperar()
-  alterar(id, { registroPensamentosAtivo: ativo })
-}
-
 // Liga ou desliga um módulo/protocolo (ver data/modulos.js) para o paciente. Só a Admin.
 export async function definirModulo(id, moduloId, ativo) {
   await esperar()
   gravar((db) => {
     const p = db.perfis.find((x) => x.id === id)
     p.modulos = { ...p.modulos, [moduloId]: ativo }
+  })
+}
+
+// Liga, ajusta ou desliga (`config` null) o questionário de um módulo. Só a Admin.
+// `config`: { frequencia: 'unica' | 14 | 30, ativadaEm, pedidoEm }.
+export async function definirEscala(id, escalaId, config) {
+  await esperar()
+  gravar((db) => {
+    const p = db.perfis.find((x) => x.id === id)
+    const escalas = { ...p.escalas }
+    if (config) escalas[escalaId] = config
+    else delete escalas[escalaId]
+    p.escalas = escalas
   })
 }
 

@@ -1,22 +1,25 @@
-// Comentários da psicóloga nos tópicos do Resumo. Só a Admin lê e grava.
-// DEMONSTRAÇÃO: banco do navegador. Com Supabase: tabela `comentarios_resumo`, RLS só-Admin.
-import { ler, gravar, novoId, esperar } from './demo/banco'
+// Anotações da psicóloga nos tópicos do Resumo e nos gráficos. Só a Admin lê e grava.
+// `origem` é o título legível do tópico ("Resumo · Humor", "Gráficos · Humor (1 a 5)"), usado na aba Anotações clínicas.
+// DEMONSTRAÇÃO: banco do navegador. Com Supabase: tabela `comentarios_resumo` (com coluna `origem`), RLS só-Admin.
+import { ler, gravar, novoId, agora, esperar } from './demo/banco'
 import { hojeLocal } from './datas'
 
-export async function listarComentarios(userId, desde) {
+// Sem `desde`, devolve todas as anotações do paciente.
+export async function listarComentarios(userId, desde = '') {
   await esperar()
   return ler('comentarios').filter((c) => c.userId === userId && c.data >= desde)
 }
 
-export async function salvarComentario(userId, { id, topico, texto }) {
+export async function salvarComentario(userId, { id, topico, origem, texto }) {
   await esperar()
   let salvo
   gravar((db) => {
     if (id) {
       salvo = db.comentarios.find((c) => c.id === id)
       salvo.texto = texto.trim()
+      salvo.updatedAt = agora()
     } else {
-      salvo = { id: novoId(), userId, topico, texto: texto.trim(), data: hojeLocal() }
+      salvo = { id: novoId(), userId, topico, origem: origem ?? null, texto: texto.trim(), data: hojeLocal(), updatedAt: agora() }
       db.comentarios.push(salvo)
     }
   })

@@ -27,7 +27,7 @@ export default function AppShell() {
           { to: '/app', rotulo: 'Início', Icone: House, end: true },
           { to: '/app/checkin', rotulo: 'Check-in', Icone: CalendarHeart },
           { to: '/app/semana', rotulo: 'Semana', Icone: Sprout },
-          ...(perfil.registroPensamentosAtivo ? [{ to: '/app/pensamentos', rotulo: 'Pensamentos', Icone: BrainCircuit }] : []),
+          { to: '/app/pensamentos', rotulo: 'Pensamentos', Icone: BrainCircuit },
         ]
       : []
 
@@ -119,7 +119,7 @@ export default function AppShell() {
                   to={link.to}
                   end={link.end}
                   className={({ isActive }) =>
-                    `relative flex flex-col items-center gap-1 py-2.5 font-interface text-[11px] font-semibold ${
+                    `relative flex flex-col items-center gap-1 py-2.5 font-interface text-xs font-semibold ${
                       isActive ? 'text-petroleo' : 'text-textoSecundario'
                     }`
                   }

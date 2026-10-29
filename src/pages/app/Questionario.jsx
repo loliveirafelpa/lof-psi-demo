@@ -2,14 +2,14 @@ import { useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../lib/AuthContext'
 import { salvarQuestionario } from '../../lib/protocolosApi'
-import { ESCALAS } from '../../data/escalas'
-import { MODULOS } from '../../data/modulos'
+import { ESCALAS, rotuloFrequencia } from '../../data/escalas'
+import { escalasLigadas } from '../../data/modulos'
 import Pagina, { Destaque } from '../../components/Pagina'
 import Bloco from '../../components/Bloco'
 import Botao from '../../components/Botao'
 import AvisoCrise from '../../components/AvisoCrise'
 
-// Questionário periódico de um módulo ligado (EPDS, GAD-7, AUDIT-C, Fagerström).
+// Questionário periódico de um módulo ligado (EPDS, GAD-7).
 // O paciente não vê a pontuação: ela vai só para o painel da psicóloga.
 export default function Questionario() {
   const { tipo } = useParams()
@@ -20,8 +20,8 @@ export default function Questionario() {
   const [erro, setErro] = useState('')
   const [enviando, setEnviando] = useState(false)
 
-  // Só abre o questionário de um módulo que a psicóloga ligou para este paciente.
-  const liberado = escala && MODULOS.some((m) => m.escala === tipo && perfil.modulos[m.id])
+  // Só abre o questionário que a psicóloga ligou para este paciente.
+  const liberado = escala && escalasLigadas(perfil).includes(tipo)
   if (!liberado) return <Navigate to="/app" replace />
 
   const faltam = respostas.filter((r) => r === null).length
@@ -76,7 +76,7 @@ export default function Questionario() {
 
   return (
     <Pagina
-      sobretitulo={`Questionário · a cada ${escala.intervaloDias === 30 ? 'mês' : `${escala.intervaloDias} dias`}`}
+      sobretitulo={perfil.escalas[tipo].frequencia === 'unica' ? 'Questionário' : `Questionário · ${rotuloFrequencia(perfil.escalas[tipo].frequencia).toLowerCase()}`}
       titulo={escala.tituloPaciente}
       descricao={escala.instrucao}
     >

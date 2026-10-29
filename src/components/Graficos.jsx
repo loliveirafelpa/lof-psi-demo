@@ -26,19 +26,6 @@ function useLargura() {
   return [ref, largura]
 }
 
-// Média dos últimos 7 dias (com pelo menos 3 registros), para suavizar a oscilação diária.
-function mediaMovel(dias, valores, janela = 7) {
-  return Object.fromEntries(
-    dias.map((d, i) => {
-      const v = dias
-        .slice(Math.max(0, i - janela + 1), i + 1)
-        .map((x) => valores[x])
-        .filter((x) => x !== null && x !== undefined)
-      return [d, v.length >= 3 ? v.reduce((a, b) => a + b, 0) / v.length : null]
-    }),
-  )
-}
-
 // Coluna com a ponta arredondada (4px) e a base reta.
 function colunaPath(x, y, l, h) {
   const r = Math.min(4, l / 2, h)
@@ -58,7 +45,8 @@ function Dica({ x, largura, children }) {
 }
 
 /**
- * Série diária: `linha` (pontos do dia + média de 7 dias) ou `colunas`.
+ * Série diária: `linha` (o valor real de cada dia, ligado pela linha, e a média do período tracejada) ou `colunas`.
+ * Dias sem registro ficam sem ponto; a linha liga um registro ao seguinte.
  * `valores`: { 'AAAA-MM-DD': número | null }. `referencia`: { valor, rotulo } — linha de referência.
  */
 export function GraficoDiario({ dias, valores, tipo = 'linha', min = 0, max, unidade = '', referencia, altura = 150, rotuloValor = 'Valor' }) {
@@ -66,28 +54,18 @@ export function GraficoDiario({ dias, valores, tipo = 'linha', min = 0, max, uni
   const [foco, setFoco] = useState(null)
   const presentes = dias.map((d) => valores[d]).filter((v) => v !== null && v !== undefined)
   const topo = max ?? tetoRedondo(Math.max(1, ...presentes, referencia?.valor ?? 0))
-  const m = { esq: 30, dir: referencia ? 64 : 14, cima: 10, baixo: 22 }
+  const linha = tipo === 'linha'
+  const media = linha && presentes.length ? presentes.reduce((a, b) => a + b, 0) / presentes.length : null
+  const m = { esq: 30, dir: referencia || media !== null ? 64 : 14, cima: 10, baixo: 22 }
   const w = Math.max(0, largura - m.esq - m.dir)
   const h = altura - m.cima - m.baixo
   const banda = dias.length ? w / dias.length : 0
   const cx = (i) => m.esq + banda * i + banda / 2
   const y = (v) => m.cima + h - ((v - min) / (topo - min || 1)) * h
   const ticks = [min, Math.round(min + (topo - min) / 2), topo]
-  const media = tipo === 'linha' ? mediaMovel(dias, valores) : null
 
-  const caminho = media
-    ? dias
-        .map((d, i) => (media[d] === null ? null : `${cx(i)},${y(media[d])}`))
-        .reduce((acc, p) => {
-          if (!p) return [...acc, []]
-          acc[acc.length - 1].push(p)
-          return acc
-        }, [[]])
-        .filter((s) => s.length > 1)
-        .map((s) => `M${s.join('L')}`)
-        .join('')
-    : ''
-  const ultimoComMedia = media ? [...dias].reverse().find((d) => media[d] !== null) : null
+  const comValor = dias.map((d, i) => [d, i]).filter(([d]) => valores[d] !== null && valores[d] !== undefined)
+  const caminho = linha && comValor.length > 1 ? `M${comValor.map(([d, i]) => `${cx(i)},${y(valores[d])}`).join('L')}` : ''
   const fmt = (v) => `${dec(v)}${unidade}`
   const fmtMedia = (v) => `${v.toFixed(1).replace('.', ',')}${unidade}`
 
@@ -111,7 +89,16 @@ export function GraficoDiario({ dias, valores, tipo = 'linha', min = 0, max, uni
               </text>
             </g>
           )}
+          {media !== null && !referencia && (
+            <g>
+              <line x1={m.esq} x2={m.esq + w} y1={y(media)} y2={y(media)} stroke={cores.textoSecundario} strokeWidth="1" strokeDasharray="4 3" />
+              <text x={m.esq + w + 6} y={y(media) + 4} fontSize="11" fill={cores.textoSecundario}>
+                média {fmtMedia(media)}
+              </text>
+            </g>
+          )}
           {foco !== null && <line x1={cx(foco)} x2={cx(foco)} y1={m.cima} y2={m.cima + h} stroke={cores.borda} strokeWidth="1" />}
+          {caminho && <path d={caminho} fill="none" stroke={cores.serie1} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
           {tipo === 'colunas'
             ? dias.map((d, i) => {
                 const v = valores[d]
@@ -119,22 +106,9 @@ export function GraficoDiario({ dias, valores, tipo = 'linha', min = 0, max, uni
                 const l = Math.min(24, Math.max(2, banda - 2))
                 return <path key={d} d={colunaPath(cx(i) - l / 2, y(v), l, y(min) - y(v))} fill={cores.serie1} opacity={foco === null || foco === i ? 1 : 0.55} />
               })
-            : dias.map((d, i) =>
-                valores[d] === null || valores[d] === undefined ? null : (
-                  <circle key={d} cx={cx(i)} cy={y(valores[d])} r={foco === i ? 4.5 : 3} fill={cores.serieSuave} />
-                ),
-              )}
-          {caminho && <path d={caminho} fill="none" stroke={cores.serie1} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />}
-          {ultimoComMedia && (
-            <g>
-              <circle cx={cx(dias.indexOf(ultimoComMedia))} cy={y(media[ultimoComMedia])} r="4" fill={cores.serie1} stroke={cores.branco} strokeWidth="2" />
-              {!referencia && (
-                <text x={cx(dias.indexOf(ultimoComMedia)) - 8} y={y(media[ultimoComMedia]) - 9} textAnchor="end" fontSize="11" fontWeight="600" fill={cores.texto}>
-                  {fmtMedia(media[ultimoComMedia])}
-                </text>
-              )}
-            </g>
-          )}
+            : comValor.map(([d, i]) => (
+                <circle key={d} cx={cx(i)} cy={y(valores[d])} r={foco === i ? 4.5 : 3} fill={cores.serie1} stroke={cores.branco} strokeWidth="1.5" />
+              ))}
           {[0, Math.floor((dias.length - 1) / 2), dias.length - 1].map((i, k) => (
             <text key={k} x={cx(i)} y={altura - 6} textAnchor={k === 0 ? 'start' : k === 2 ? 'end' : 'middle'} fontSize="11" fill={cores.textoSecundario}>
               {dias[i] && diaMes(dias[i])}
@@ -152,7 +126,7 @@ export function GraficoDiario({ dias, valores, tipo = 'linha', min = 0, max, uni
           <p>
             {rotuloValor}: {valores[dias[foco]] === null || valores[dias[foco]] === undefined ? 'sem registro' : fmt(valores[dias[foco]])}
           </p>
-          {media?.[dias[foco]] !== null && media && <p className="text-textoSecundario">Média de 7 dias: {fmtMedia(media[dias[foco]])}</p>}
+          {media !== null && <p className="text-textoSecundario">Média do período: {fmtMedia(media)}</p>}
         </Dica>
       )}
     </div>
@@ -201,59 +175,6 @@ export function BarrasHorizontais({ itens, max, formatar = dec, referencia, cor 
           </p>
         </div>
       )}
-    </div>
-  )
-}
-
-const ESCALA_HUMOR = [cores.escala1, cores.escala2, cores.escala3, cores.escala4, cores.escala5]
-const DIAS_SEMANA = ['seg', 'ter', 'qua', 'qui', 'sex', 'sáb', 'dom']
-
-/** Mapa do humor: uma célula por dia (linhas = dias da semana, colunas = semanas). */
-export function MapaHumor({ dias, humorPorDia, rotulos }) {
-  const [foco, setFoco] = useState(null)
-  const primeiro = (new Date(`${dias[0]}T12:00`).getDay() + 6) % 7 // segunda = 0
-  const celulas = [...Array(primeiro).fill(null), ...dias]
-  const semanas = Math.ceil(celulas.length / 7)
-  return (
-    <div className="flex flex-wrap items-start gap-6">
-      <div className="relative flex gap-2">
-        <div className="grid grid-rows-7 gap-[3px] pt-0.5 text-[10px] leading-[16px] text-textoSecundario">
-          {DIAS_SEMANA.map((d) => (
-            <span key={d}>{d}</span>
-          ))}
-        </div>
-        <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={{ gridTemplateColumns: `repeat(${semanas}, 16px)` }}>
-          {celulas.map((d, i) =>
-            d === null ? (
-              <span key={`v${i}`} />
-            ) : (
-              <span
-                key={d}
-                onMouseEnter={() => setFoco(d)}
-                onMouseLeave={() => setFoco(null)}
-                className={`h-4 w-4 rounded-[3px] ${foco === d ? 'ring-2 ring-texto ring-offset-1' : ''}`}
-                style={{ backgroundColor: humorPorDia[d] ? ESCALA_HUMOR[humorPorDia[d] - 1] : cores.grade }}
-                aria-label={`${formatarDia(d)}: ${humorPorDia[d] ? rotulos[humorPorDia[d] - 1] : 'sem registro'}`}
-              />
-            ),
-          )}
-        </div>
-        {foco && (
-          <div className="pointer-events-none absolute -top-9 left-8 z-10 whitespace-nowrap rounded-lg border border-borda bg-branco px-2.5 py-1.5 font-interface text-xs shadow-cartao">
-            <span className="capitalize">{formatarDia(foco)}</span>: {humorPorDia[foco] ? rotulos[humorPorDia[foco] - 1] : 'sem registro'}
-          </div>
-        )}
-      </div>
-      <div className="space-y-1.5 text-xs text-textoSecundario" aria-label="Legenda">
-        {[...rotulos].reverse().map((r, i) => (
-          <p key={r} className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-[3px]" style={{ backgroundColor: ESCALA_HUMOR[4 - i] }} aria-hidden /> {r}
-          </p>
-        ))}
-        <p className="flex items-center gap-2">
-          <span className="h-3 w-3 rounded-[3px]" style={{ backgroundColor: cores.grade }} aria-hidden /> Sem registro
-        </p>
-      </div>
     </div>
   )
 }

@@ -4,19 +4,13 @@
 //
 // VALIDAR com a psicóloga a redação final de cada item com a versão brasileira publicada.
 // Referências: EPDS — Cox, Holden & Sagovsky (1987), versão brasileira de Santos et al.;
-// GAD-7 — Spitzer et al. (2006), domínio público; AUDIT-C — OMS / Bush et al. (1998);
-// Fagerström (FTND) — Heatherton et al. (1991), versão brasileira de Carmo & Pueyo (2002).
+// GAD-7 — Spitzer et al. (2006), domínio público.
 
 const FREQ_GAD = [
   { pontos: 0, rotulo: 'Nenhuma vez' },
   { pontos: 1, rotulo: 'Vários dias' },
   { pontos: 2, rotulo: 'Mais da metade dos dias' },
   { pontos: 3, rotulo: 'Quase todos os dias' },
-]
-
-const SIM_NAO = [
-  { pontos: 1, rotulo: 'Sim' },
-  { pontos: 0, rotulo: 'Não' },
 ]
 
 export const ESCALAS = {
@@ -143,96 +137,37 @@ export const ESCALAS = {
       'Sentir medo, como se algo horrível fosse acontecer',
     ].map((texto) => ({ texto, opcoes: FREQ_GAD })),
   },
-  auditc: {
-    id: 'auditc',
-    nome: 'AUDIT-C',
-    tituloPaciente: 'Seu consumo de bebida no último mês',
-    intervaloDias: 30,
-    instrucao: 'Pense no seu consumo de bebidas alcoólicas no último ano. 1 dose = 1 lata de cerveja, 1 taça de vinho ou 1 dose de destilado.',
-    referencia: 'Rastreio positivo: 4 ou mais (homens) · 3 ou mais (mulheres).',
-    corte: 4,
-    maximo: 12,
-    itens: [
-      {
-        texto: 'Com que frequência você toma bebidas alcoólicas?',
-        opcoes: [
-          { pontos: 0, rotulo: 'Nunca' },
-          { pontos: 1, rotulo: 'Uma vez por mês ou menos' },
-          { pontos: 2, rotulo: '2 a 4 vezes por mês' },
-          { pontos: 3, rotulo: '2 a 3 vezes por semana' },
-          { pontos: 4, rotulo: '4 ou mais vezes por semana' },
-        ],
-      },
-      {
-        texto: 'Nos dias em que bebe, quantas doses você costuma tomar?',
-        opcoes: [
-          { pontos: 0, rotulo: '1 ou 2' },
-          { pontos: 1, rotulo: '3 ou 4' },
-          { pontos: 2, rotulo: '5 ou 6' },
-          { pontos: 3, rotulo: '7 a 9' },
-          { pontos: 4, rotulo: '10 ou mais' },
-        ],
-      },
-      {
-        texto: 'Com que frequência você toma 6 ou mais doses numa mesma ocasião?',
-        opcoes: [
-          { pontos: 0, rotulo: 'Nunca' },
-          { pontos: 1, rotulo: 'Menos de uma vez por mês' },
-          { pontos: 2, rotulo: 'Uma vez por mês' },
-          { pontos: 3, rotulo: 'Uma vez por semana' },
-          { pontos: 4, rotulo: 'Todos ou quase todos os dias' },
-        ],
-      },
-    ],
-  },
-  fagerstrom: {
-    id: 'fagerstrom',
-    nome: 'Teste de Fagerström',
-    tituloPaciente: 'Sua relação com o cigarro',
-    intervaloDias: 30,
-    instrucao: 'Responda pensando no seu hábito atual.',
-    referencia: 'Grau de dependência: 0–2 muito baixo · 3–4 baixo · 5 médio · 6–7 elevado · 8–10 muito elevado.',
-    corte: 6,
-    maximo: 10,
-    itens: [
-      {
-        texto: 'Quanto tempo depois de acordar você fuma o primeiro cigarro?',
-        opcoes: [
-          { pontos: 3, rotulo: 'Nos primeiros 5 minutos' },
-          { pontos: 2, rotulo: 'Entre 6 e 30 minutos' },
-          { pontos: 1, rotulo: 'Entre 31 e 60 minutos' },
-          { pontos: 0, rotulo: 'Depois de 60 minutos' },
-        ],
-      },
-      { texto: 'Você acha difícil não fumar em lugares proibidos?', opcoes: SIM_NAO },
-      {
-        texto: 'Qual cigarro do dia traz mais satisfação?',
-        opcoes: [
-          { pontos: 1, rotulo: 'O primeiro da manhã' },
-          { pontos: 0, rotulo: 'Outros' },
-        ],
-      },
-      {
-        texto: 'Quantos cigarros você fuma por dia?',
-        opcoes: [
-          { pontos: 0, rotulo: '10 ou menos' },
-          { pontos: 1, rotulo: '11 a 20' },
-          { pontos: 2, rotulo: '21 a 30' },
-          { pontos: 3, rotulo: '31 ou mais' },
-        ],
-      },
-      { texto: 'Você fuma mais nas primeiras horas da manhã do que no resto do dia?', opcoes: SIM_NAO },
-      { texto: 'Você fuma mesmo quando está doente, a ponto de ficar de cama a maior parte do dia?', opcoes: SIM_NAO },
-    ],
-  },
 }
 
 // As respostas são guardadas como a pontuação de cada item (dentro de um item, cada opção tem pontos diferentes).
 export const pontuar = (respostas) => respostas.reduce((total, pontos) => total + (pontos ?? 0), 0)
 
-// Questionário de um módulo ligado está "pendente" se nunca foi respondido ou se já passou o intervalo.
-export function escalaPendente(escala, ultimaData, hoje) {
-  if (!ultimaData) return true
-  const dias = (new Date(`${hoje}T12:00`) - new Date(`${ultimaData}T12:00`)) / 86400000
-  return dias >= escala.intervaloDias
+// Com que frequência a psicóloga pede o questionário. `intervaloDias` de cada escala é só a sugestão inicial.
+export const FREQUENCIAS = [
+  { valor: 'unica', rotulo: 'Só uma vez' },
+  { valor: 14, rotulo: 'A cada 2 semanas' },
+  { valor: 30, rotulo: 'A cada mês' },
+]
+export const rotuloFrequencia = (valor) => FREQUENCIAS.find((f) => f.valor === valor)?.rotulo ?? ''
+
+// `config` (perfil.escalas[id]): { frequencia, ativadaEm, pedidoEm } — a psicóloga liga a escala dentro do módulo.
+// `ultimo`: a última aplicação respondida ({ data, createdAt }) ou nada.
+// Pendente quando: nunca respondeu desde que foi ligada, a psicóloga pediu de novo ("Pedir agora")
+// ou, na frequência periódica, já passou o intervalo.
+export function escalaPendente(config, ultimo, hoje) {
+  if (!config) return false
+  if (!ultimo || ultimo.createdAt < config.ativadaEm) return true
+  if (config.pedidoEm && ultimo.createdAt < config.pedidoEm) return true
+  if (config.frequencia === 'unica') return false
+  return diasDesde(ultimo.data, hoje) >= config.frequencia
 }
+
+// Próxima aplicação prevista (AAAA-MM-DD), só na frequência periódica.
+export function proximaAplicacao(config, ultimo) {
+  if (!config || config.frequencia === 'unica' || !ultimo) return null
+  const d = new Date(`${ultimo.data}T12:00`)
+  d.setDate(d.getDate() + config.frequencia)
+  return d.toISOString().slice(0, 10)
+}
+
+const diasDesde = (data, hoje) => (new Date(`${hoje}T12:00`) - new Date(`${data}T12:00`)) / 86400000

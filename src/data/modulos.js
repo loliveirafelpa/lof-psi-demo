@@ -8,6 +8,7 @@
 //   multipla — várias opções; uma opção com `exclusiva: true` desmarca as outras (ex.: "Nada disso")
 //   escala   — barra de 0 a 10 (`minimo` / `maximo` são os rótulos das pontas)
 //   hora     — horário (HH:MM)
+//   texto    — resposta curta escrita, sempre opcional
 // `quando`: a pergunta só aparece se outra do mesmo módulo tiver a resposta indicada.
 //
 // Linguagem: descritiva e acolhedora. Nada aqui é diagnóstico.
@@ -31,7 +32,6 @@ export const MODULOS = [
     nome: 'Tabagismo',
     tituloPaciente: 'Cigarro',
     resumo: 'Se fumou, quanto, em que momentos e a vontade de fumar. Mostra ao paciente os dias seguidos sem fumar.',
-    escala: 'fagerstrom',
     perguntas: [
       { id: 'fumou', curto: 'Fumou', tipo: 'simnao', rotulo: 'Você fumou hoje?', ajuda: 'Inclui cigarro eletrônico, narguilé e palheiro.' },
       {
@@ -50,19 +50,6 @@ export const MODULOS = [
         colunas: 4,
       },
       {
-        id: 'tipos',
-        curto: 'O quê',
-        tipo: 'multipla',
-        rotulo: 'O que você usou?',
-        quando: { fumou: true },
-        opcoes: [
-          { valor: 'cigarro', rotulo: 'Cigarro' },
-          { valor: 'eletronico', rotulo: 'Cigarro eletrônico' },
-          { valor: 'narguile', rotulo: 'Narguilé' },
-          { valor: 'outro', rotulo: 'Palheiro ou outro' },
-        ],
-      },
-      {
         id: 'momentos',
         curto: 'Momentos',
         tipo: 'multipla',
@@ -77,8 +64,10 @@ export const MODULOS = [
           { valor: 'amigos', rotulo: 'Com amigos' },
           { valor: 'trabalho', rotulo: 'Em pausas do trabalho' },
           { valor: 'tedio', rotulo: 'No tédio' },
+          { valor: 'outro', rotulo: 'Outro' },
         ],
       },
+      { id: 'momentoOutro', curto: 'Outro momento', tipo: 'texto', rotulo: 'Qual outro momento?', ajuda: 'Opcional.', quando: { momentoOutro: true } },
       { id: 'vontade', curto: 'Vontade', tipo: 'escala', rotulo: 'Quanta vontade de fumar você sentiu?', minimo: 'Nenhuma', maximo: 'Muita' },
     ],
   },
@@ -87,8 +76,7 @@ export const MODULOS = [
     grupo: 'habitos',
     nome: 'Álcool',
     tituloPaciente: 'Bebida alcoólica',
-    resumo: 'Se bebeu, quantas doses, com quem, para quê e a vontade de beber. AUDIT-C uma vez por mês.',
-    escala: 'auditc',
+    resumo: 'Se bebeu, quantas doses, com quem, para quê e a vontade de beber.',
     perguntas: [
       { id: 'bebeu', curto: 'Bebeu', tipo: 'simnao', rotulo: 'Você tomou alguma bebida alcoólica hoje?' },
       {
@@ -146,7 +134,7 @@ export const MODULOS = [
     grupo: 'protocolos',
     nome: 'Puerpério e gestação',
     tituloPaciente: 'Você e o bebê',
-    resumo: 'Descanso, vínculo, rede de apoio, tempo para si e pensamentos intrusivos. Escala de Edimburgo (EPDS) a cada 2 semanas.',
+    resumo: 'Descanso, vínculo, rede de apoio, tempo para si e pensamentos intrusivos. Opcional: Escala de Edimburgo (EPDS).',
     escala: 'epds',
     perguntas: [
       {
@@ -189,6 +177,7 @@ export const MODULOS = [
         ],
       },
       { id: 'tempoSi', curto: 'Tempo para si', tipo: 'simnao', rotulo: 'Teve algum tempo só para você?' },
+      { id: 'tempoSiQue', curto: 'O que fez', tipo: 'texto', rotulo: 'O que você fez nesse tempo?', ajuda: 'Opcional.', quando: { tempoSi: true } },
       {
         id: 'intrusivos',
         curto: 'Pens. assustadores',
@@ -209,7 +198,7 @@ export const MODULOS = [
     grupo: 'protocolos',
     nome: 'Crise de ansiedade e pânico',
     tituloPaciente: 'Ansiedade',
-    resumo: 'Botão "Tive uma crise" com registro do episódio e tela de respiração guiada. No check-in: evitação e medo de ter crise. GAD-7 a cada 2 semanas.',
+    resumo: 'Botão "Tive uma crise" com registro do episódio e tela de respiração guiada. No check-in: evitação e medo de ter crise. Opcional: GAD-7.',
     escala: 'gad7',
     registraCrises: true,
     perguntas: [
@@ -318,9 +307,11 @@ export const MODULOS = [
           { valor: 'lugar', rotulo: 'Um lugar' },
           { valor: 'objetos', rotulo: 'Fotos ou objetos' },
           { valor: 'conversas', rotulo: 'Conversas sobre a pessoa' },
+          { valor: 'outro', rotulo: 'Outro' },
           { valor: 'nenhum', rotulo: 'Nenhum em especial', exclusiva: true },
         ],
       },
+      { id: 'momentoOutro', curto: 'Outro momento', tipo: 'texto', rotulo: 'Qual outro momento?', ajuda: 'Opcional.', quando: { lutoOutro: true } },
       {
         id: 'rotina',
         curto: 'Rotina',
@@ -335,6 +326,7 @@ export const MODULOS = [
         colunas: 4,
       },
       { id: 'memoria', curto: 'Gesto de memória', tipo: 'simnao', rotulo: 'Fez algo para lembrar da pessoa com carinho?' },
+      { id: 'memoriaQue', curto: 'O que fez', tipo: 'texto', rotulo: 'O que você fez?', ajuda: 'Opcional.', quando: { memoria: true } },
     ],
   },
   {
@@ -433,11 +425,16 @@ export const modulo = (id) => MODULOS.find((m) => m.id === id)
 // Módulos ligados para um perfil, na ordem do catálogo.
 export const modulosAtivos = (perfil) => MODULOS.filter((m) => perfil?.modulos?.[m.id])
 
+// Questionários que a psicóloga ligou (dentro de um módulo ligado). Devolve os ids das escalas.
+export const escalasLigadas = (perfil) => modulosAtivos(perfil).filter((m) => m.escala && perfil.escalas?.[m.escala]).map((m) => m.escala)
+
 // Condições de exibição que dependem de mais de uma resposta.
 const CONDICOES = {
   escolaNao: (r) => r.escola !== null && r.escola !== undefined && r.escola !== 0,
   aconteceuAlgo: (r) => (r.aconteceu ?? []).some((v) => v !== 'nada'),
   trabalhou: (r) => r.horas !== null && r.horas !== undefined && r.horas !== 0,
+  momentoOutro: (r) => r.fumou === true && (r.momentos ?? []).includes('outro'),
+  lutoOutro: (r) => (r.momentos ?? []).includes('outro'),
 }
 
 export function perguntaVisivel(pergunta, respostas = {}) {
@@ -452,7 +449,7 @@ export function textoResposta(pergunta, valor) {
   if (valor === null || valor === undefined || (Array.isArray(valor) && !valor.length)) return null
   if (pergunta.tipo === 'simnao') return valor ? 'Sim' : 'Não'
   if (pergunta.tipo === 'escala') return `${valor}/10`
-  if (pergunta.tipo === 'hora') return valor
+  if (pergunta.tipo === 'hora' || pergunta.tipo === 'texto') return valor
   const rotulo = (v) => pergunta.opcoes.find((o) => o.valor === v)?.rotulo ?? v
   return Array.isArray(valor) ? valor.map(rotulo).join(', ') : rotulo(valor)
 }

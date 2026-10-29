@@ -2,6 +2,13 @@
 // DEMONSTRAÇÃO: banco do navegador. Com Supabase: tabelas `objetivos_terapeuticos` e `objetivos_semana`.
 import { ler, gravar, novoId, agora, esperar } from './demo/banco'
 
+// Um objetivo por linha; tira a numeração que tenha sido digitada (a tela numera sozinha).
+export const listaDeObjetivos = (texto) =>
+  texto
+    .split('\n')
+    .map((l) => l.replace(/^\s*(\d+\s*[.)\-–]|[-•*])\s*/, '').trim())
+    .filter(Boolean)
+
 export async function buscarObjetivosTerapeuticos(userId) {
   await esperar()
   const o = ler('objetivosTerapeuticos').find((x) => x.userId === userId)

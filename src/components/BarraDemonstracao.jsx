@@ -16,7 +16,7 @@ export default function BarraDemonstracao() {
   }
 
   return (
-    <div className="bg-texto px-4 py-1.5 font-interface text-[11px] font-semibold text-branco">
+    <div className="bg-texto px-4 py-1.5 font-interface text-xs font-semibold text-branco">
       <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <p className="flex items-center gap-1.5">
           <FlaskConical size={13} aria-hidden /> Demonstração · dados fictícios, guardados só neste navegador

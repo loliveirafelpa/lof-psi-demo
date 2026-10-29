@@ -53,7 +53,7 @@ export async function listarCheckinsDeTodos(desde) {
   return ler('checkins')
     .filter((c) => c.data >= desde)
     .sort((a, b) => b.data.localeCompare(a.data))
-    .map((c) => ({ userId: c.userId, data: c.data, humor: c.humor, ansiedade: c.ansiedade }))
+    .map((c) => ({ userId: c.userId, data: c.data, humor: c.humor, ansiedade: c.ansiedade, modulos: c.modulos ?? {} }))
 }
 
 export async function listarCheckins(userId, desde) {

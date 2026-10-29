@@ -2,7 +2,7 @@
 // com sorteio de semente fixa — a mesma demonstração toda vez que os dados são restaurados.
 // O dia de hoje fica sem check-in, para quem testar poder fazer o seu.
 // Cada paciente mostra um conjunto de módulos e protocolos.
-import { diasAtras, diaDaSemana } from '../datas'
+import { deslocar, diasAtras, diaDaSemana, hojeLocal } from '../datas'
 import { pontuar } from '../../data/escalas'
 
 export const ID_PSICOLOGA = 'psicologa-demo'
@@ -71,6 +71,24 @@ function gerarCheckins(userId, j, sortear) {
 // Monta um questionário respondido a partir da pontuação de cada item.
 const escala = (id, userId, tipo, d, respostas) => ({ id, userId, tipo, data: diasAtras(d), respostas, total: pontuar(respostas), createdAt: instante(d, 20) })
 
+const TEMPO_PARA_SI = [
+  'Tomei um banho demorado.',
+  'Li um pouco do meu livro.',
+  'Caminhei no quarteirão.',
+  'Dormi uma hora a mais.',
+  'Vi um episódio de série.',
+  'Tomei um café com calma.',
+  'Liguei para uma amiga.',
+]
+
+const GESTOS_DE_MEMORIA = [
+  'Fiz o café do jeito que meu pai fazia.',
+  'Olhei as fotos da pescaria com calma.',
+  'Acendi uma vela e rezei.',
+  'Contei para minha filha uma história dele.',
+  'Reguei as plantas que ele cuidava.',
+]
+
 const JEITOS = {
   // Puerpério: bebê de 2 meses, sono picado, pouca rede de apoio nos dias de semana.
   'p-marina': {
@@ -86,14 +104,20 @@ const JEITOS = {
     dia: ({ d, fimDeSemana }, { chance, um, alguns }) => {
       const comApoio = fimDeSemana || d > 19
       const apoio = comApoio ? alguns(['parceiro', 'familia'], 0.8) : chance(0.4) ? ['parceiro'] : ['ninguem']
+      const descanso = comApoio ? um([2, 3, 3]) : um([1, 1, 2])
+      const vinculo = comApoio ? um(['conectada', 'cansada_bem', 'cansada_bem']) : um(['cansada_bem', 'sobrecarregada', 'preocupada', 'sobrecarregada'])
+      const tempoSi = chance(comApoio ? 0.5 : 0.1)
+      // O que ela fez no tempo para si: nem todo dia ela escreve (o campo é opcional).
+      const tempoSiQue = tempoSi && d % 5 !== 0 ? TEMPO_PARA_SI[d % TEMPO_PARA_SI.length] : undefined
       return {
         ajusteHumor: comApoio ? 0.4 : -0.3,
         modulos: {
           puerperio: {
-            descanso: comApoio ? um([2, 3, 3]) : um([1, 1, 2]),
-            vinculo: comApoio ? um(['conectada', 'cansada_bem', 'cansada_bem']) : um(['cansada_bem', 'sobrecarregada', 'preocupada', 'sobrecarregada']),
+            descanso,
+            vinculo,
             apoio: apoio.length ? apoio : ['ninguem'],
-            tempoSi: chance(comApoio ? 0.5 : 0.1),
+            tempoSi,
+            ...(tempoSiQue && { tempoSiQue }),
             intrusivos: d < 20 && chance(0.35) ? um([1, 1, 2]) : 0,
           },
         },
@@ -158,8 +182,8 @@ const JEITOS = {
             : {
                 fumou: true,
                 quantidade,
-                tipos: ['cigarro'],
                 momentos: alguns(['acordar', 'cafe', 'refeicoes', 'estresse', 'trabalho'], 0.55).concat(['estresse']).filter((v, i, a) => a.indexOf(v) === i),
+                ...(d % 6 === 0 && { momentos: ['estresse', 'outro'], momentoOutro: 'No trânsito, voltando do trabalho' }),
                 vontade: limitar(Math.round(7 + ruido(2)), 0, 10),
               },
           burnout:
@@ -225,14 +249,20 @@ const JEITOS = {
     dia: ({ d, progresso }, { chance, um, alguns, ruido }) => {
       const dataDificil = d === 35 || d === 22 || d === 8
       const deitou = um(['22:30', '23:00', '23:30', '00:00', '00:30'])
+      // Dia 2 sempre com gesto de memória, para ter um exemplo no período de 7 dias.
+      const memoria = chance(dataDificil ? 0.9 : 0.3) || d === 2
+      const memoriaQue = memoria && d % 4 !== 0 ? GESTOS_DE_MEMORIA[d % GESTOS_DE_MEMORIA.length] : undefined
       return {
         ajusteHumor: dataDificil ? -1 : progresso * 0.6,
         modulos: {
           luto: {
             saudade: limitar(Math.round((dataDificil ? 9 : 7 - progresso * 2) + ruido(1.5)), 0, 10),
             momentos: dataDificil ? ['data', ...alguns(['conversas', 'objetos'], 0.6)] : alguns(['noite', 'acordar', 'objetos', 'lugar'], 0.35).length ? alguns(['noite', 'acordar', 'objetos'], 0.45) : ['nenhum'],
+            ...(d === 13 && { momentos: ['outro'], momentoOutro: 'Ouvi a música que a gente cantava no carro' }),
+            ...(d === 3 && { momentos: ['noite', 'outro'], momentoOutro: 'Arrumando o armário, achei um bilhete dele' }),
             rotina: limitar(Math.round(2 + progresso * 1.3 + ruido(0.8)), 1, 4),
-            memoria: chance(dataDificil ? 0.9 : 0.3),
+            memoria,
+            memoriaQue,
           },
           insonia: {
             deitou,
@@ -259,15 +289,18 @@ export function gerarSemente() {
   const sortear = sorteador(20261026)
   const criadoEm = instante(DIAS + 3, 10)
 
+  // Questionários ligados desde o cadastro: { escala: frequência em dias }.
+  const escalas = (lista) => Object.fromEntries(Object.entries(lista).map(([id, frequencia]) => [id, { frequencia, ativadaEm: criadoEm, pedidoEm: null }]))
+
   const perfis = [
-    { id: ID_PSICOLOGA, role: 'admin', nome: 'Psicóloga (demonstração)', email: 'psicologa@exemplo.com', modulos: SEM_MODULOS, registroPensamentosAtivo: false, acompanhamentoEncerradoEm: null, createdAt: criadoEm },
-    { id: 'p-marina', role: 'paciente', nome: 'Marina Costa', email: 'marina@exemplo.com', modulos: modulos(['puerperio']), registroPensamentosAtivo: false, acompanhamentoEncerradoEm: null, createdAt: criadoEm },
-    { id: 'p-rafael', role: 'paciente', nome: 'Rafael Lima', email: 'rafael@exemplo.com', modulos: modulos(['crise', 'alcool']), registroPensamentosAtivo: true, acompanhamentoEncerradoEm: null, createdAt: criadoEm },
-    { id: 'p-juliana', role: 'paciente', nome: 'Juliana Alves', email: 'juliana@exemplo.com', modulos: modulos(['tabagismo', 'burnout']), registroPensamentosAtivo: true, acompanhamentoEncerradoEm: null, createdAt: criadoEm },
-    { id: 'p-pedro', role: 'paciente', nome: 'Pedro Henrique Souza', email: 'pedro.resp@exemplo.com', modulos: modulos(['bullying']), registroPensamentosAtivo: false, acompanhamentoEncerradoEm: null, createdAt: criadoEm },
-    { id: 'p-carlos', role: 'paciente', nome: 'Carlos Mendes', email: 'carlos@exemplo.com', modulos: modulos(['luto', 'insonia']), registroPensamentosAtivo: false, acompanhamentoEncerradoEm: null, createdAt: criadoEm },
-    { id: 'p-ana', role: 'paciente', nome: 'Ana Ribeiro', email: 'ana@exemplo.com', modulos: modulos(['alcool']), registroPensamentosAtivo: true, acompanhamentoEncerradoEm: null, createdAt: instante(1, 16) },
-    { id: 'p-beatriz', role: 'paciente', nome: 'Beatriz Nunes', email: 'beatriz@exemplo.com', modulos: SEM_MODULOS, registroPensamentosAtivo: false, acompanhamentoEncerradoEm: diasAtras(28), createdAt: criadoEm },
+    { id: ID_PSICOLOGA, role: 'admin', nome: 'Psicóloga (demonstração)', email: 'psicologa@exemplo.com', modulos: SEM_MODULOS, acompanhamentoEncerradoEm: null, createdAt: criadoEm },
+    { id: 'p-marina', role: 'paciente', nome: 'Marina Costa', email: 'marina@exemplo.com', modulos: modulos(['puerperio']), escalas: escalas({ epds: 14 }), acompanhamentoEncerradoEm: null, createdAt: criadoEm },
+    { id: 'p-rafael', role: 'paciente', nome: 'Rafael Lima', email: 'rafael@exemplo.com', modulos: modulos(['crise', 'alcool']), escalas: escalas({ gad7: 14 }), acompanhamentoEncerradoEm: null, createdAt: criadoEm },
+    { id: 'p-juliana', role: 'paciente', nome: 'Juliana Alves', email: 'juliana@exemplo.com', modulos: modulos(['tabagismo', 'burnout']), escalas: {}, acompanhamentoEncerradoEm: null, createdAt: criadoEm },
+    { id: 'p-pedro', role: 'paciente', nome: 'Pedro Henrique Souza', email: 'pedro.resp@exemplo.com', modulos: modulos(['bullying']), acompanhamentoEncerradoEm: null, createdAt: criadoEm },
+    { id: 'p-carlos', role: 'paciente', nome: 'Carlos Mendes', email: 'carlos@exemplo.com', modulos: modulos(['luto', 'insonia']), acompanhamentoEncerradoEm: null, createdAt: criadoEm },
+    { id: 'p-ana', role: 'paciente', nome: 'Ana Ribeiro', email: 'ana@exemplo.com', modulos: modulos(['alcool']), escalas: {}, acompanhamentoEncerradoEm: null, createdAt: instante(1, 16) },
+    { id: 'p-beatriz', role: 'paciente', nome: 'Beatriz Nunes', email: 'beatriz@exemplo.com', modulos: SEM_MODULOS, acompanhamentoEncerradoEm: diasAtras(28), createdAt: criadoEm },
   ]
 
   const checkins = Object.entries(JEITOS).flatMap(([id, jeito]) => gerarCheckins(id, jeito, sortear))
@@ -280,7 +313,7 @@ export function gerarSemente() {
       { id: `${p.id}-saude`, userId: p.id, tipo: 'dado_saude', versao: '2026-10-26', aceitoEm: criadoEm, revogadoEm: null },
     ])
 
-  const escalas = [
+  const questionarios = [
     // EPDS a cada 2 semanas. Na segunda, o item 10 (pensar em se machucar) aparece marcado — o painel destaca.
     escala('e1', 'p-marina', 'epds', 29, [1, 1, 2, 2, 1, 2, 1, 1, 1, 0]),
     escala('e2', 'p-marina', 'epds', 15, [2, 2, 2, 2, 2, 2, 2, 2, 1, 1]),
@@ -288,9 +321,6 @@ export function gerarSemente() {
     escala('e4', 'p-rafael', 'gad7', 30, [2, 2, 3, 2, 1, 2, 2]),
     escala('e5', 'p-rafael', 'gad7', 16, [2, 2, 2, 2, 1, 1, 2]),
     escala('e6', 'p-rafael', 'gad7', 2, [1, 1, 2, 1, 1, 1, 1]),
-    escala('e7', 'p-rafael', 'auditc', 31, [3, 2, 2]),
-    escala('e8', 'p-juliana', 'fagerstrom', 40, [2, 1, 1, 1, 1, 0]),
-    escala('e9', 'p-juliana', 'fagerstrom', 10, [1, 0, 1, 0, 1, 0]),
   ]
 
   const crises = [
@@ -298,6 +328,8 @@ export function gerarSemente() {
     { id: 'c2', userId: 'p-rafael', ocorridoEm: instante(21, 14, 5), intensidade: 7, duracao: 20, lugar: 'trabalho', sintomas: ['coracao', 'peito', 'suor'], estrategias: ['respiracao', 'agua'], ajudou: 'A respiração do app e lavar o rosto.', createdAt: instante(21, 15) },
     { id: 'c3', userId: 'p-rafael', ocorridoEm: instante(11, 23, 40), intensidade: 6, duracao: 45, lugar: 'casa', sintomas: ['coracao', 'irrealidade', 'morrer'], estrategias: ['respiracao', 'ligou'], ajudou: 'Liguei para minha irmã e fiquei conversando até passar.', createdAt: instante(11, 23, 59) },
     { id: 'c4', userId: 'p-rafael', ocorridoEm: instante(4, 18, 30), intensidade: 4, duracao: 5, lugar: 'lugar_cheio', sintomas: ['coracao', 'tremor'], estrategias: ['aterramento'], ajudou: 'O 5-4-3-2-1. Passou rápido.', createdAt: instante(4, 19) },
+    // Segunda crise na semana: Rafael aparece em "Precisam de atenção" na lista de pacientes.
+    { id: 'c5', userId: 'p-rafael', ocorridoEm: instante(1, 7, 50), intensidade: 6, duracao: 10, lugar: 'transporte', sintomas: ['coracao', 'ar'], estrategias: ['respiracao'], ajudou: 'A respiração do app até a minha estação.', createdAt: instante(1, 8, 10) },
   ]
 
   const pensamentos = [
@@ -314,11 +346,11 @@ export function gerarSemente() {
   }
 
   const reflexoes = [
-    { id: 'rf1', userId: 'p-marina', semanaInicio: semana(14), objetivo: 'Pedir ajuda para alguém em pelo menos um dia', percepcaoAvanco: 2, avancos: 'Pedi para minha vizinha ficar com o bebê 1 hora.', dificuldades: 'As noites sozinha quando meu marido viaja.', updatedAt: instante(10, 20) },
-    { id: 'rf2', userId: 'p-marina', semanaInicio: semana(7), objetivo: null, percepcaoAvanco: 3, avancos: 'Caminhei duas vezes.', dificuldades: 'Ainda sinto culpa quando deixo o bebê com alguém.', updatedAt: instante(3, 20) },
-    { id: 'rf3', userId: 'p-rafael', semanaInicio: semana(7), objetivo: null, percepcaoAvanco: 4, avancos: 'Peguei o metrô três vezes.', dificuldades: 'Beber menos no fim de semana.', updatedAt: instante(2, 21) },
-    { id: 'rf4', userId: 'p-juliana', semanaInicio: semana(7), objetivo: null, percepcaoAvanco: 3, avancos: 'Parei de fumar!', dificuldades: 'A vontade depois do almoço e do café.', updatedAt: instante(2, 20) },
-    { id: 'rf5', userId: 'p-carlos', semanaInicio: semana(7), objetivo: null, percepcaoAvanco: 2, avancos: 'Voltei a dormir antes da meia-noite.', dificuldades: 'O aniversário do meu pai.', updatedAt: instante(3, 22) },
+    { id: 'rf1', userId: 'p-marina', semanaInicio: semana(14), percepcaoAvanco: 2, avancos: 'Pedi para minha vizinha ficar com o bebê 1 hora.', dificuldades: 'As noites sozinha quando meu marido viaja.', updatedAt: instante(10, 20) },
+    { id: 'rf2', userId: 'p-marina', semanaInicio: semana(7), percepcaoAvanco: 3, avancos: 'Caminhei duas vezes.', dificuldades: 'Ainda sinto culpa quando deixo o bebê com alguém.', updatedAt: instante(3, 20) },
+    { id: 'rf3', userId: 'p-rafael', semanaInicio: semana(7), percepcaoAvanco: 4, avancos: 'Peguei o metrô três vezes.', dificuldades: 'Beber menos no fim de semana.', updatedAt: instante(2, 21) },
+    { id: 'rf4', userId: 'p-juliana', semanaInicio: semana(7), percepcaoAvanco: 3, avancos: 'Parei de fumar!', dificuldades: 'A vontade depois do almoço e do café.', updatedAt: instante(2, 20) },
+    { id: 'rf5', userId: 'p-carlos', semanaInicio: semana(7), percepcaoAvanco: 2, avancos: 'Voltei a dormir antes da meia-noite.', dificuldades: 'O aniversário do meu pai.', updatedAt: instante(3, 22) },
   ]
 
   const objetivosTerapeuticos = [
@@ -330,6 +362,9 @@ export function gerarSemente() {
   ]
 
   const objetivosSemana = [
+    { id: 'os5', userId: 'p-marina', semanaInicio: semana(14), texto: 'Pedir ajuda para alguém em pelo menos um dia.', updatedAt: instante(16, 18) },
+    { id: 'os6', userId: 'p-marina', semanaInicio: semana(7), texto: 'Sair para caminhar duas vezes, mesmo que por 15 minutos.', updatedAt: instante(9, 18) },
+    { id: 'os7', userId: 'p-rafael', semanaInicio: semana(7), texto: 'Pegar o metrô três vezes, fora do horário de pico.', updatedAt: instante(9, 18) },
     { id: 'os1', userId: 'p-marina', semanaInicio: semana(0), texto: 'Aceitar ajuda da sogra na quarta e usar a hora livre só para você.', updatedAt: instante(2, 18) },
     { id: 'os2', userId: 'p-rafael', semanaInicio: semana(0), texto: 'Pegar o metrô duas vezes no horário de pico, sem sair antes da sua estação.', updatedAt: instante(2, 18) },
     { id: 'os3', userId: 'p-juliana', semanaInicio: semana(0), texto: 'Quando vier a vontade de fumar, esperar 10 minutos e beber um copo de água.', updatedAt: instante(2, 18) },
@@ -339,12 +374,44 @@ export function gerarSemente() {
   const fichas = perfis
     .filter((p) => p.role === 'paciente')
     .map((p) => ({ userId: p.id, email: p.email, whatsapp: null, inicioAcompanhamento: p.id === 'p-ana' ? diasAtras(1) : diasAtras(60), historico: null, updatedAt: criadoEm }))
+  // Horário fixo das consultas (fictício). Juliana é quinzenal: a referência é a próxima quarta-feira.
+  const proximaQuarta = deslocar(hojeLocal(), (3 - new Date().getDay() + 7) % 7)
+  const CONSULTAS = {
+    'p-marina': { diaSemana: 1, hora: '10:00', frequencia: 'semanal', referencia: null },
+    'p-rafael': { diaSemana: 2, hora: '19:00', frequencia: 'semanal', referencia: null },
+    'p-juliana': { diaSemana: 3, hora: '08:00', frequencia: 'quinzenal', referencia: proximaQuarta },
+    'p-carlos': { diaSemana: 4, hora: '15:00', frequencia: 'semanal', referencia: null },
+    'p-pedro': { diaSemana: 5, hora: '16:30', frequencia: 'semanal', referencia: null },
+  }
+  fichas.forEach((f) => (f.consulta = CONSULTAS[f.userId] ?? null))
   fichas.find((f) => f.userId === 'p-marina').historico = 'Primeira gestação. Parto cesárea há 2 meses. Mãe morou com ela nas primeiras 4 semanas. Marido viaja a trabalho com frequência.'
   fichas.find((f) => f.userId === 'p-pedro').historico = '14 anos, 9º ano. Atendimento solicitado pela mãe (responsável legal, que assinou o consentimento).'
 
   const anotacoes = [
     { id: 'a1', userId: 'p-marina', data: diasAtras(14), texto: 'EPDS de hoje com item 10 marcado. Conversamos na sessão: pensamentos passageiros, sem plano. Combinado plano de segurança e contato com o marido.', updatedAt: instante(14, 19) },
+    // Rafael: uma sessão por semana nas últimas 6 semanas (fictício).
+    { id: 'a3', userId: 'p-rafael', data: diasAtras(37), texto: 'Primeira sessão após a avaliação. Relata duas crises no metrô no último mês e passou a ir de carro de aplicativo. Psicoeducação sobre ansiedade e o ciclo da evitação. Combinado: começar o check-in diário.', updatedAt: instante(37, 19) },
+    { id: 'a4', userId: 'p-rafael', data: diasAtras(30), texto: 'Montamos juntos a hierarquia de exposição (de olhar o metrô na estação até viajar no horário de pico). GAD-7 de hoje: 14. Treinamos a respiração diafragmática na sessão.', updatedAt: instante(30, 19) },
+    { id: 'a5', userId: 'p-rafael', data: diasAtras(23), texto: 'Fez os dois primeiros degraus da hierarquia. Ansiedade antecipatória alta na véspera, mas a de durante ficou abaixo do esperado por ele. Introduzido o registro de pensamentos.', updatedAt: instante(23, 19) },
+    { id: 'a6', userId: 'p-rafael', data: diasAtras(16), texto: 'Uma crise na semana, em lugar cheio, que ele conseguiu manejar com o 5-4-3-2-1. GAD-7: 12. Começou a trazer o tema do trabalho: medo de errar e de ser avaliado.', updatedAt: instante(16, 19) },
     { id: 'a2', userId: 'p-rafael', data: diasAtras(9), texto: 'Exposição gradual ao metrô seguindo bem. Investigar o uso de álcool nos fins de semana como possível evitação.', updatedAt: instante(9, 19) },
+    { id: 'a7', userId: 'p-rafael', data: diasAtras(2), texto: 'GAD-7 de hoje: 8, a menor pontuação desde o início. Pegou o metrô três vezes na semana. Trabalhamos o pensamento “vou ser demitido” (evidências a favor e contra). Próximo passo: horário de pico.', updatedAt: instante(2, 19) },
+  ]
+
+  // Anotações nos tópicos do Resumo e nos gráficos (aparecem também, reunidas por dia, em Anotações clínicas).
+  const comentarios = [
+    { id: 'co4', userId: 'p-rafael', topico: 'grafico-humor', origem: 'Gráficos · Humor (1 a 5)', data: diasAtras(37), texto: 'Humor oscilando entre neutro e mal na primeira semana de registros. Ainda pouco dado para ver padrão.', updatedAt: instante(37, 18) },
+    { id: 'co5', userId: 'p-rafael', topico: 'grafico-sono', origem: 'Gráficos · Horas de sono', data: diasAtras(30), texto: 'Dorme menos de 6h nas noites antes de dias com reunião. Perguntar sobre a rotina da noite.', updatedAt: instante(30, 18) },
+    { id: 'co6', userId: 'p-rafael', topico: 'grafico-escala-gad7', origem: 'Gráficos · GAD-7 · todas as aplicações', data: diasAtras(30), texto: 'Linha de base: 14 (moderada). Reaplicar a cada duas semanas.', updatedAt: instante(30, 18) },
+    { id: 'co7', userId: 'p-rafael', topico: 'grafico-situacoes', origem: 'Gráficos · Ansiedade média por situação marcada', data: diasAtras(23), texto: '“Trabalho” aparece com a ansiedade média mais alta, acima até do transporte. Tema a explorar além do metrô.', updatedAt: instante(23, 18) },
+    { id: 'co8', userId: 'p-rafael', topico: 'evitacao', origem: 'Resumo · Evitação', data: diasAtras(23), texto: 'Evitação diminuindo nas semanas em que fez a exposição.', updatedAt: instante(23, 18) },
+    { id: 'co9', userId: 'p-rafael', topico: 'grafico-crises', origem: 'Gráficos · Crises registradas · intensidade (0 a 10)', data: diasAtras(16), texto: 'Uma crise só no período, de intensidade menor que as relatadas na avaliação.', updatedAt: instante(16, 18) },
+    { id: 'co10', userId: 'p-rafael', topico: 'grafico-movimento', origem: 'Gráficos · Energia média com e sem movimento', data: diasAtras(16), texto: 'Energia um pouco mais alta nos dias em que caminhou. Conversar sobre retomar a corrida que ele mencionou.', updatedAt: instante(16, 18) },
+    { id: 'co1', userId: 'p-rafael', topico: 'grafico-ansiedade', origem: 'Gráficos · Ansiedade ou estresse (0 a 10)', data: diasAtras(9), texto: 'Picos de ansiedade nos dias de metrô no horário de pico. Retomar a hierarquia de exposição.', updatedAt: instante(9, 19) },
+    { id: 'co11', userId: 'p-rafael', topico: 'alcool', origem: 'Resumo · Álcool', data: diasAtras(9), texto: 'Bebe mais quando está sozinho e marca “relaxar” como motivo. Pode ser uma forma de aliviar a ansiedade da semana.', updatedAt: instante(9, 18) },
+    { id: 'co2', userId: 'p-rafael', topico: 'temas', origem: 'Resumo · Possíveis temas para a sessão', data: diasAtras(2), texto: 'Levar para a sessão a conversa com o chefe e o pensamento “vou ser demitido”.', updatedAt: instante(2, 18) },
+    { id: 'co3', userId: 'p-rafael', topico: 'grafico-alcool', origem: 'Gráficos · Álcool · Doses por dia', data: diasAtras(2), texto: 'Doses concentradas no fim de semana, como ele relatou. Seguir investigando.', updatedAt: instante(2, 18) },
+    { id: 'co12', userId: 'p-rafael', topico: 'grafico-dia-semana', origem: 'Gráficos · Humor médio por dia da semana', data: diasAtras(2), texto: 'Domingo segue sendo o dia de humor mais baixo. Antecipação da semana de trabalho?', updatedAt: instante(2, 18) },
   ]
 
   const medicacoes = [
@@ -355,7 +422,8 @@ export function gerarSemente() {
     perfis,
     consentimentos,
     checkins,
-    escalas,
+    escalas: questionarios,
+    adiamentos: [],
     crises,
     pensamentos,
     reflexoes,
@@ -364,7 +432,7 @@ export function gerarSemente() {
     fichas,
     anotacoes,
     medicacoes,
-    comentarios: [],
+    comentarios,
     solicitacoes: [],
   }
 }

@@ -72,7 +72,7 @@ export default function Login() {
 
         {psicologa && (
           <div>
-            <p className="mb-2 font-interface text-[11px] font-semibold uppercase tracking-[0.16em] text-petroleo">Visão da psicóloga</p>
+            <p className="mb-2 font-interface text-xs font-semibold uppercase tracking-[0.16em] text-petroleo">Visão da psicóloga</p>
             <Opcao
               onClick={() => entrarComo(psicologa.id)}
               icone={ClipboardList}
@@ -84,7 +84,7 @@ export default function Login() {
         )}
 
         <div>
-          <p className="mb-2 font-interface text-[11px] font-semibold uppercase tracking-[0.16em] text-petroleo">App do paciente</p>
+          <p className="mb-2 font-interface text-xs font-semibold uppercase tracking-[0.16em] text-petroleo">App do paciente</p>
           <div className="space-y-2">
             {pacientes.map((p) => (
               <Opcao key={p.id} onClick={() => entrarComo(p.id)} icone={UserRound} titulo={p.nome} nota={notaDoPaciente(p)} />

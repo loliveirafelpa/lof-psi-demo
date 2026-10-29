@@ -4,6 +4,7 @@ import { perguntaVisivel, SIM_NAO } from '../data/modulos'
 import EscolhaUnica from './EscolhaUnica'
 import EscolhaMultipla from './EscolhaMultipla'
 import BarraEscala from './BarraEscala'
+import Campo from './Campo'
 
 // Opção "exclusiva" (ex.: "Nada disso"): marcá-la desmarca as outras, e vice-versa.
 function comExclusiva(opcoes, anteriores, novos) {
@@ -82,6 +83,20 @@ export default function PerguntasModulo({ modulo, respostas = {}, onChange }) {
                 className="mt-3 block w-40 rounded-xl border border-borda/70 bg-papel px-4 py-3 font-interface text-texto focus:border-petroleo focus:bg-branco"
               />
             </div>
+          )
+        case 'texto':
+          return (
+            <Campo
+              key={id}
+              id={id}
+              rotulo={p.rotulo}
+              ajuda={p.ajuda}
+              multilinha
+              rows={3}
+              maxLength={200}
+              value={valor ?? ''}
+              onChange={(e) => muda(p.id)(e.target.value || null)}
+            />
           )
         default:
           return null

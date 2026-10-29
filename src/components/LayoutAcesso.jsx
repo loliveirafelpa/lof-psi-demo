@@ -20,7 +20,7 @@ export default function LayoutAcesso({ titulo, children }) {
       <div className="bg-petroleo px-6 pb-20 pt-10 text-branco lg:flex lg:flex-col lg:justify-between lg:p-14">
         <Marca />
         <div className="mt-9 lg:mt-0">
-          <p className="font-interface text-[11px] font-semibold uppercase tracking-[0.14em] text-nevoa">
+          <p className="font-interface text-xs font-semibold uppercase tracking-[0.14em] text-nevoa">
             Acompanhamento psicológico entre as sessões
           </p>
           <h1 className="mt-3 max-w-md font-titulo text-[2.1rem] leading-tight text-branco lg:text-5xl">{titulo}</h1>

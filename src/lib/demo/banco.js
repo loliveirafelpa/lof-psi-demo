@@ -4,8 +4,19 @@
 import { gerarSemente } from './semente'
 import { hojeLocal } from '../datas'
 
-const CHAVE = 'lof-psi-demo-v1'
+const CHAVE = 'lof-psi-demo-v5'
 let memoria = null
+
+// Várias abas abertas (ex.: a psicóloga numa, o paciente noutra): quando outra aba grava,
+// esta descarta a cópia em memória e avisa as telas, para não mostrar nem regravar dados velhos.
+export const EVENTO_DADOS_ALTERADOS = 'lof-psi-demo-dados-alterados'
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key !== CHAVE) return
+    memoria = null
+    window.dispatchEvent(new Event(EVENTO_DADOS_ALTERADOS))
+  })
+}
 
 function carregar() {
   if (memoria) return memoria
